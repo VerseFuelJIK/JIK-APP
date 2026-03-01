@@ -1,0 +1,9 @@
+{
+  "name": "VerseFuel",
+  "short_name": "VerseFuel",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": []
+}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JIK - Jesus Is King</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0d0d">
+
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(160deg, #0b0b0b, #1a1a1a);
+  color: #d4af37;
+  font-family: Georgia, serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px 18px;
+}
+
+h1 {
+  font-size: 22px;
+  letter-spacing: 4px;
+}
+
+button {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  margin: 6px 0;
+  background: transparent;
+  border: 1px solid #d4af37;
+  color: #d4af37;
+  font-size: 12px;
+}
+
+button:active {
+  background: #d4af37;
+  color: black;
+}
+
+#verse {
+  margin-top: 30px;
+  font-size: 18px;
+  text-align: center;
+  max-width: 400px;
+}
+
+#reference {
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.small {
+  margin-top: 20px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+
+<h1>JIK</h1>
+
+<button onclick="getVerse()">RANDOM VERSE</button>
+<button onclick="getMoodVerse('strength')">STRENGTH</button>
+<button onclick="getMoodVerse('peace')">PEACE</button>
+<button onclick="getMoodVerse('fear')">ANXIETY</button>
+<button onclick="getMoodVerse('work')">BUSINESS</button>
+
+<div id="verse"></div>
+<div id="reference"></div>
+
+<button onclick="saveFavorite()">SAVE FAVORITE</button>
+<button onclick="viewFavorites()">VIEW FAVORITES</button>
+
+<div class="small" id="streak"></div>
+
+<script>
+let currentVerse = "";
+let currentRef = "";
+
+async function getVerse() {
+  const res = await fetch("https://bible-api.com/?random=verse");
+  const data = await res.json();
+  displayVerse(data.text, data.reference);
+}
+
+async function getMoodVerse(keyword) {
+  const res = await fetch("https://bible-api.com/?random=verse");
+  const data = await res.json();
+
+  if (data.text.toLowerCase().includes(keyword)) {
+    displayVerse(data.text, data.reference);
+  } else {
+    getMoodVerse(keyword);
+  }
+}
+
+function displayVerse(text, ref) {
+  currentVerse = text;
+  currentRef = ref;
+  document.getElementById("verse").innerText = text;
+  document.getElementById("reference").innerText = ref + " (KJV)";
+  updateStreak();
+}
+
+function saveFavorite() {
+  let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+  favorites.push({text: currentVerse, ref: currentRef});
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  alert("Saved to Favorites");
+}
+
+function viewFavorites() {
+  let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+  if (favorites.length === 0) {
+    alert("No favorites saved yet.");
+    return;
+  }
+  let list = favorites.map(v => v.ref).join("\n");
+  alert("Favorites:\n\n" + list);
+}
+
+function updateStreak() {
+  let today = new Date().toDateString();
+  let lastVisit = localStorage.getItem("lastVisit");
+  let streak = parseInt(localStorage.getItem("streak")) || 0;
+
+  if (lastVisit !== today) {
+    streak++;
+    localStorage.setItem("streak", streak);
+    localStorage.setItem("lastVisit", today);
+  }
+
+  document.getElementById("streak").innerText = "Current Streak: " + streak + " days";
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
