@@ -82,48 +82,70 @@ button:active {
 <script>
 let currentVerse = "";
 let currentRef = "";
+let loading = false;
 
 async function getVerse() {
-  const res = await fetch("https://bible-api.com/?random=verse");
-  const data = await res.json();
-  displayVerse(data.text, data.reference);
-  setActive("RANDOM");
+  if (loading) return;
+  loading = true;
+  showLoading();
+
+  try {
+    const res = await fetch("https://bible-api.com/?random=verse");
+    const data = await res.json();
+    displayVerse(data.text, data.reference, "RANDOM");
+  } catch (err) {
+    showError();
+  }
+
+  loading = false;
 }
 
 async function getMoodVerse(keyword, label) {
+  if (loading) return;
+  loading = true;
+  showLoading();
+
   try {
     const res = await fetch("https://bible-api.com/" + keyword);
     const data = await res.json();
 
-    if (!data.verses) {
-      document.getElementById("verse").innerText = "No verses found.";
-      return;
+    if (!data.verses || data.verses.length === 0) {
+      showError();
+    } else {
+      const randomIndex = Math.floor(Math.random() * data.verses.length);
+      const verseObj = data.verses[randomIndex];
+      displayVerse(verseObj.text, verseObj.reference, label);
     }
-
-    const randomIndex = Math.floor(Math.random() * data.verses.length);
-    const verseObj = data.verses[randomIndex];
-
-    displayVerse(verseObj.text, verseObj.reference);
-    setActive(label);
-
   } catch (err) {
-    document.getElementById("verse").innerText = "Error loading verse.";
+    showError();
   }
+
+  loading = false;
 }
 
-function displayVerse(text, ref) {
+function displayVerse(text, ref, label) {
   currentVerse = text;
   currentRef = ref;
+
   document.getElementById("verse").innerText = text;
-  document.getElementById("reference").innerText = ref + " (KJV)";
+  document.getElementById("reference").innerText = ref + " (KJV) • " + label;
+
   updateStreak();
 }
 
-function setActive(label) {
-  document.getElementById("reference").innerText += " • " + label;
+function showLoading() {
+  document.getElementById("verse").innerText = "Loading...";
+  document.getElementById("reference").innerText = "";
+}
+
+function showError() {
+  document.getElementById("verse").innerText = "Unable to load verse. Try again.";
+  document.getElementById("reference").innerText = "";
 }
 
 function saveFavorite() {
+  if (!currentVerse) return;
+
   let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
   favorites.push({text: currentVerse, ref: currentRef});
   localStorage.setItem("favorites", JSON.stringify(favorites));
@@ -136,6 +158,7 @@ function viewFavorites() {
     alert("No favorites saved yet.");
     return;
   }
+
   let list = favorites.map(v => v.ref).join("\n");
   alert("Favorites:\n\n" + list);
 }
@@ -163,4 +186,5 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
