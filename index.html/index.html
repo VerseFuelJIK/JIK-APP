@@ -84,43 +84,65 @@ let currentVerse = "";
 let currentRef = "";
 let loading = false;
 
+const moodKeywords = {
+  strength: ["strong", "strength", "courage", "power", "mighty"],
+  peace: ["peace", "rest", "calm", "quiet", "still"],
+  anxiety: ["fear", "afraid", "worry", "anxious", "trouble"],
+  business: ["work", "labor", "plans", "prosper", "diligent"]
+};
+
 async function getVerse() {
   if (loading) return;
   loading = true;
   showLoading();
 
   try {
-    const res = await fetch("https://bible-api.com/?random=verse");
-    const data = await res.json();
-    displayVerse(data.text, data.reference, "RANDOM");
-  } catch (err) {
+    const verse = await fetchRandomVerse();
+    displayVerse(verse.text, verse.reference, "RANDOM");
+  } catch {
     showError();
   }
 
   loading = false;
 }
 
-async function getMoodVerse(keyword, label) {
+async function getMoodVerse(mood) {
   if (loading) return;
   loading = true;
   showLoading();
 
   try {
-    const res = await fetch("https://bible-api.com/" + keyword);
-    const data = await res.json();
-
-    if (!data.verses || data.verses.length === 0) {
-      showError();
-    } else {
-      const randomIndex = Math.floor(Math.random() * data.verses.length);
-      const verseObj = data.verses[randomIndex];
-      displayVerse(verseObj.text, verseObj.reference, label);
-    }
-  } catch (err) {
+    const verse = await findMatchingVerse(mood);
+    displayVerse(verse.text, verse.reference, mood.toUpperCase());
+  } catch {
     showError();
   }
 
   loading = false;
+}
+
+async function fetchRandomVerse() {
+  const res = await fetch("https://bible-api.com/?random=verse");
+  return await res.json();
+}
+
+async function findMatchingVerse(mood) {
+  const keywords = moodKeywords[mood];
+  let attempts = 0;
+
+  while (attempts < 10) {
+    const verse = await fetchRandomVerse();
+    const textLower = verse.text.toLowerCase();
+
+    if (keywords.some(word => textLower.includes(word))) {
+      return verse;
+    }
+
+    attempts++;
+  }
+
+  // fallback if no match found
+  return await fetchRandomVerse();
 }
 
 function displayVerse(text, ref, label) {
@@ -134,12 +156,12 @@ function displayVerse(text, ref, label) {
 }
 
 function showLoading() {
-  document.getElementById("verse").innerText = "Loading...";
+  document.getElementById("verse").innerText = "Searching...";
   document.getElementById("reference").innerText = "";
 }
 
 function showError() {
-  document.getElementById("verse").innerText = "Unable to load verse. Try again.";
+  document.getElementById("verse").innerText = "Unable to load verse.";
   document.getElementById("reference").innerText = "";
 }
 
@@ -186,5 +208,6 @@ if ("serviceWorker" in navigator) {
 </body>
 
 </html>
+
 
 
