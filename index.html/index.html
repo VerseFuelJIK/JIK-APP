@@ -87,16 +87,27 @@ async function getVerse() {
   const res = await fetch("https://bible-api.com/?random=verse");
   const data = await res.json();
   displayVerse(data.text, data.reference);
+  setActive("RANDOM");
 }
 
-async function getMoodVerse(keyword) {
-  const res = await fetch("https://bible-api.com/?random=verse");
-  const data = await res.json();
+async function getMoodVerse(keyword, label) {
+  try {
+    const res = await fetch("https://bible-api.com/" + keyword);
+    const data = await res.json();
 
-  if (data.text.toLowerCase().includes(keyword)) {
-    displayVerse(data.text, data.reference);
-  } else {
-    getMoodVerse(keyword);
+    if (!data.verses) {
+      document.getElementById("verse").innerText = "No verses found.";
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * data.verses.length);
+    const verseObj = data.verses[randomIndex];
+
+    displayVerse(verseObj.text, verseObj.reference);
+    setActive(label);
+
+  } catch (err) {
+    document.getElementById("verse").innerText = "Error loading verse.";
   }
 }
 
@@ -106,6 +117,10 @@ function displayVerse(text, ref) {
   document.getElementById("verse").innerText = text;
   document.getElementById("reference").innerText = ref + " (KJV)";
   updateStreak();
+}
+
+function setActive(label) {
+  document.getElementById("reference").innerText += " • " + label;
 }
 
 function saveFavorite() {
@@ -136,7 +151,8 @@ function updateStreak() {
     localStorage.setItem("lastVisit", today);
   }
 
-  document.getElementById("streak").innerText = "Current Streak: " + streak + " days";
+  document.getElementById("streak").innerText =
+    "Current Streak: " + streak + " days";
 }
 
 if ("serviceWorker" in navigator) {
@@ -145,4 +161,5 @@ if ("serviceWorker" in navigator) {
 </script>
 
 </body>
+
 </html>
