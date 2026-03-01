@@ -65,11 +65,11 @@ button:active {
 
 <h1>JIK</h1>
 
-<button onclick="getVerse()">RANDOM VERSE</button>
-<button onclick="getMoodVerse('strength')">STRENGTH</button>
-<button onclick="getMoodVerse('peace')">PEACE</button>
-<button onclick="getMoodVerse('anxiety')">ANXIETY</button>
-<button onclick="getMoodVerse('business')">BUSINESS</button>
+<button onclick="getVerse()">RANDOM</button>
+<button onclick="getMoodVerse()">STRENGTH</button>
+<button onclick="getMoodVerse()">PEACE</button>
+<button onclick="getMoodVerse()">ANXIETY</button>
+<button onclick="getMoodVerse()">BUSINESS</button>
 
 <div id="verse"></div>
 <div id="reference"></div>
@@ -80,130 +80,31 @@ button:active {
 <div class="small" id="streak"></div>
 
 <script>
-let currentVerse = "";
-let currentRef = "";
-let loading = false;
-
-const moodKeywords = {
-  strength: ["strong", "strength", "courage", "power", "mighty"],
-  peace: ["peace", "rest", "calm", "quiet", "still"],
-  anxiety: ["fear", "afraid", "worry", "anxious", "trouble"],
-  business: ["work", "labor", "plans", "prosper", "diligent"]
-};
-
 async function getVerse() {
-  if (loading) return;
-  loading = true;
-  showLoading();
+  document.getElementById("verse").innerText = "Loading...";
+  document.getElementById("reference").innerText = "";
 
   try {
-    const verse = await fetchRandomVerse();
-    displayVerse(verse.text, verse.reference, "RANDOM");
-  } catch {
-    showError();
+    const res = await fetch("https://bible-api.com/?random=verse");
+    const data = await res.json();
+
+    document.getElementById("verse").innerText = data.text;
+    document.getElementById("reference").innerText = data.reference + " (KJV)";
+  } catch (error) {
+    document.getElementById("verse").innerText = "API failed to load.";
   }
-
-  loading = false;
 }
 
-async function getMoodVerse(mood) {
-  if (loading) return;
-  loading = true;
-  showLoading();
-
-  try {
-    const verse = await findMatchingVerse(mood);
-    displayVerse(verse.text, verse.reference, mood.toUpperCase());
-  } catch {
-    showError();
-  }
-
-  loading = false;
-}
-
-async function fetchRandomVerse() {
-  const res = await fetch("https://bible-api.com/?random=verse");
-  return await res.json();
-}
-
-async function findMatchingVerse(mood) {
-  const keywords = moodKeywords[mood];
-  let attempts = 0;
-
-  while (attempts < 10) {
-    const verse = await fetchRandomVerse();
-    const textLower = verse.text.toLowerCase();
-
-    if (keywords.some(word => textLower.includes(word))) {
-      return verse;
-    }
-
-    attempts++;
-  }
-
-  // fallback if no match found
-  return await fetchRandomVerse();
-}
-
-function displayVerse(text, ref, label) {
-  currentVerse = text;
-  currentRef = ref;
-
-  document.getElementById("verse").innerText = text;
-  document.getElementById("reference").innerText = ref + " (KJV) • " + label;
-
-  updateStreak();
-}
-
-function showLoading() {
-  document.getElementById("verse").innerText = "Searching...";
-  document.getElementById("reference").innerText = "";
-}
-
-function showError() {
-  document.getElementById("verse").innerText = "Unable to load verse.";
-  document.getElementById("reference").innerText = "";
-}
-
-function saveFavorite() {
-  if (!currentVerse) return;
-
-  let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  favorites.push({text: currentVerse, ref: currentRef});
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-  alert("Saved to Favorites");
-}
-
-function viewFavorites() {
-  let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-  if (favorites.length === 0) {
-    alert("No favorites saved yet.");
-    return;
-  }
-
-  let list = favorites.map(v => v.ref).join("\n");
-  alert("Favorites:\n\n" + list);
-}
-
-function updateStreak() {
-  let today = new Date().toDateString();
-  let lastVisit = localStorage.getItem("lastVisit");
-  let streak = parseInt(localStorage.getItem("streak")) || 0;
-
-  if (lastVisit !== today) {
-    streak++;
-    localStorage.setItem("streak", streak);
-    localStorage.setItem("lastVisit", today);
-  }
-
-  document.getElementById("streak").innerText =
-    "Current Streak: " + streak + " days";
+function getMoodVerse() {
+  // TEMP: just call random to test
+  getVerse();
 }
 </script>
 
 </body>
 
 </html>
+
 
 
 
